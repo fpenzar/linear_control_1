@@ -29,9 +29,10 @@ mpdist =  0.10;   % distance to lit [m]
 % disturbance position (Z)
 pushDist = 0.1; % relative to motor axle [m]
 
-%% Load the variables
+%% Stabilize the transfer function from vel to tilt (POST INTEGRATOR)
 % HOMEMADE
-load('control_variables.mat');
+Kps = -1;              % From the Nyquist plot
+t_ipost = 1 / 10;     % From bode plot of Gvt
 
 %% wheel velocity controller (no balance) PI-regulator
 % sample (usable) controller values
@@ -67,7 +68,7 @@ saveas(h, 'motor to velocity.png');
 
 
 %% Estimate transfer function for base system using LINEARIZE
-% HOMEMADE from here down
+% HOMEMADE
 % Velcity reference to tilt angle
 load_system(model);
 open_system(model);
@@ -91,12 +92,8 @@ grid on
 title('Transfer function from reference velocity to tilt angle')
 saveas(h, 'vel to tilt.png');
 
-Kps = -1;              % From the Nyquist plot
-t_ipost = 1 / 10;     % From bode plot of Gvt
-save('control_variables.mat', 'Kps', 't_ipost', '-append');
-
 %% Estimate transfer function for base system using LINEARIZE
-% Transfer function Gtv_input to tilt_angle
+% Transfer function tilt_ref to tilt_angle
 % Velcity reference to tilt angle
 load_system(model);
 open_system(model);
@@ -126,7 +123,7 @@ alpha_tilt = 0.4;
 phase_margin_tilt = 60;
 
 % Find the new cross-over frequency
-w_c_tilt = phaseBalance_equation(deg2rad(phase_margin_tilt), alpha_tilt, Ni_tilt, Gtv_post);
+w_c_tilt = phaseBalance_equation(deg2rad(alpha_tilt), alpha_tilt, Ni_tilt, Gtv_post);
 
 % Find the time constant ti and Cpi
 ti_tilt = Ni_tilt / w_c_tilt;
@@ -142,9 +139,6 @@ open_loop_tf = Cpi_tilt * Cd_tilt * Gtv_post;
 Kp_tilt = 1 / squeeze(mag);
 G_ol = Kp_tilt*Cpi_tilt*Cd_tilt*Gtv_post;
 
-% save to matlab
-save('control_variables.mat', 'Kp_tilt', '-append');
-
 % This is a useful plot!
 bode(G_ol);
 
@@ -157,7 +151,7 @@ G_cl_fdb = (Kp_tilt*Cpi_tilt*Gtv_post) / (1 + Kp_tilt*Cpi_tilt*Gtv_post*Cd_tilt)
 [num_Cpi_tilt, den_Cpi_tilt] = tfdata(Cpi_tilt, 'v');
 
 % save to matlab
-save('control_variables.mat', 'num_Cd_tilt', 'den_Cd_tilt', 'num_Cpi_tilt', 'den_Cpi_tilt', '-append');
+save('')
 
 figure;
 step(G_cl_fwd);
