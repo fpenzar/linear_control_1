@@ -122,7 +122,7 @@ saveas(h, 'tilt ref to tilt.png');
 
 %% Tilt controller
 Ni_tilt = 3;
-alpha_tilt = 0.4;
+alpha_tilt = 0.2;
 phase_margin_tilt = 60;
 
 % Find the new cross-over frequency
