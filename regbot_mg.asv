@@ -196,6 +196,7 @@ saveas(h, 'tilt ref to wheel vel.png');
 
 %% Velcotiy controller parameters
 % PI-lead-lag controller
+%TOOD some work 
 
 Ni_vel = 5;
 alpha_vel = 0.2;
@@ -264,6 +265,7 @@ saveas(h, 'vel ref to position.png');
 % will probably have to use a rate limiter or something similar as the
 % signal towards velocity should be limited
 
+
 Ni_pos = 5;
 alpha_pos = 0.2;
 phase_margin_pos = 60;
@@ -272,25 +274,26 @@ phase_margin_pos = 60;
 [wc_pos, Kp_pos, taui_pos, taud_pos, ok_pos] = findpid(G_vel_pos, phase_margin_pos, Ni_pos, alpha_pos);
 Cpi_pos = tf([taui_pos, 1], [taui_pos 0]);
 Cd_pos = tf([taud_pos, 1], [alpha_pos*taud_pos, 1]);
-G_ol_pos = Kp_po*Cpi_vel*Cd_vel*G_tilt_vel;
-G_cl_fwd_vel = G_ol_vel / (1 + G_ol_vel);
-G_cl_fdb_vel = (Kp_vel*Cpi_vel*G_tilt_vel) / (1 + Kp_vel*Cpi_vel*G_tilt_vel*Cd_vel);
+G_ol_pos = Kp_pos*Cpi_pos*Cd_pos*G_vel_pos;
+G_cl_fwd_pos = G_ol_pos / (1 + G_ol_pos);
+G_cl_fdb_pos = (Kp_pos*Cpi_pos*G_vel_pos) / (1 + Kp_pos*Cpi_pos*G_vel_pos*Cd_pos);
 
 % get the individual numerator and denominators for the simulink model
-[num_Cd_vel, den_Cd_vel] = tfdata(Cd_vel, 'v');
-[num_Cpi_vel, den_Cpi_vel] = tfdata(Cpi_vel, 'v');
+[num_Cd_pos, den_Cd_pos] = tfdata(Cd_pos, 'v');
+[num_Cpi_pos, den_Cpi_pos] = tfdata(Cpi_pos, 'v');
 
 % save to matlab
-save('control_variables.mat', 'num_Cd_vel', 'den_Cd_vel', 'num_Cpi_vel', 'den_Cpi_vel', '-append');
-save('control_variables.mat', 'Kp_vel', '-append');
+save('control_variables.mat', 'num_Cd_pos', 'den_Cd_pos', 'num_Cpi_pos', 'den_Cpi_pos', '-append');
+save('control_variables.mat', 'Kp_pos', '-append');
 
-bode(G_ol_vel)
+bode(G_ol_pos)
 
+% the feedback position is more stable so going with that configuration
 figure;
-step(G_cl_fwd_vel);
+step(G_cl_fwd_pos);
 hold on;
-step(G_cl_fdb_vel);
+step(G_cl_fdb_pos);
 hold off;
 legend('G_cl_fwd', 'G_cl_fdb');
-disp(stepinfo(G_cl_fwd_vel));
-disp(stepinfo(G_cl_fdb_vel));
+disp(stepinfo(G_cl_fwd_pos));
+disp(stepinfo(G_cl_fdb_pos));

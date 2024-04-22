@@ -196,6 +196,7 @@ saveas(h, 'tilt ref to wheel vel.png');
 
 %% Velcotiy controller parameters
 % PI-lead-lag controller
+%TOOD some work still needs to be done here, the graphs dont look too good
 
 Ni_vel = 5;
 alpha_vel = 0.2;
@@ -263,6 +264,7 @@ saveas(h, 'vel ref to position.png');
 %% Position controller parameters
 % will probably have to use a rate limiter or something similar as the
 % signal towards velocity should be limited
+
 
 Ni_pos = 5;
 alpha_pos = 0.2;
