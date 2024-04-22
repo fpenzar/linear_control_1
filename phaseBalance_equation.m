@@ -4,6 +4,11 @@ function [w_c] = phaseBalance_equation(phase_margin, alpha, Ni, G)
     [~, phase, freq] = bode(G);
     phase = squeeze(phase);
     freq = squeeze(freq);
+
+    figure;
+    semilogx(freq, squeeze(phase)); % Convert to degrees
+    title('Phase (deg)');
+    phase_w_c
     
     % Calculate the absolute difference between phase_w_c and all phase values
     phase_diff = abs(phase - phase_w_c);
@@ -12,4 +17,5 @@ function [w_c] = phaseBalance_equation(phase_margin, alpha, Ni, G)
 
     % Find the corresponding frequency
     w_c = freq(idx);
+    w_c
 end

@@ -167,3 +167,131 @@ hold off;
 legend('G_cl_fwd', 'G_cl_fdb');
 disp(stepinfo(G_cl_fwd));
 disp(stepinfo(G_cl_fdb));
+
+%% VELOCITY CONTROLLER
+% Transfer function from tilt reference to wheel velocity
+% Velcity reference to tilt angle
+load_system(model);
+open_system(model);
+% define points in model
+ios(1) = linio(strcat(model,'/tilt_ref'),1,'openinput');
+ios(2) = linio(strcat(model, '/wheel_vel_filter'),1,'openoutput');
+% attach to model
+setlinio(model,ios);
+% Use the snapshot time(s) 0 seconds
+op = [0];
+% Linearize the model
+sys = linearize(model,ios,op);
+% get transfer function
+[num,den] = ss2tf(sys.A, sys.B, sys.C, sys.D);
+G_tilt_vel = minreal(tf(num, den)) % transfer function from tilt to velocity
+
+%% Bodeplot
+h = figure(100)
+bode(G_tilt_vel)
+
+grid on
+title('Transfer function from tilt ref to wheel vel')
+saveas(h, 'tilt ref to wheel vel.png');
+
+%% Velcotiy controller parameters
+% PI-lead-lag controller
+
+Ni_vel = 5;
+alpha_vel = 0.2;
+phase_margin_vel = 60;
+% since there was a chainsaw bode plot when just using PI-lead, the lag was
+% also added
+beta_vel = 10;
+
+% calculate the PI lead controller
+[wc_vel, Kp_vel, taui_vel, taud_vel, ok_vel] = findpidlag(G_tilt_vel, phase_margin_vel, Ni_vel, alpha_vel, beta_vel);
+Cpi_vel = tf([taui_vel, 1], [taui_vel 1/beta_vel]);
+Cd_vel = tf([taud_vel, 1], [alpha_vel*taud_vel, 1]);
+G_ol_vel = Kp_vel*Cpi_vel*Cd_vel*G_tilt_vel;
+G_cl_fwd_vel = G_ol_vel / (1 + G_ol_vel);
+G_cl_fdb_vel = (Kp_vel*Cpi_vel*G_tilt_vel) / (1 + Kp_vel*Cpi_vel*G_tilt_vel*Cd_vel);
+
+% get the individual numerator and denominators for the simulink model
+[num_Cd_vel, den_Cd_vel] = tfdata(Cd_vel, 'v');
+[num_Cpi_vel, den_Cpi_vel] = tfdata(Cpi_vel, 'v');
+
+% save to matlab
+save('control_variables.mat', 'num_Cd_vel', 'den_Cd_vel', 'num_Cpi_vel', 'den_Cpi_vel', '-append');
+save('control_variables.mat', 'Kp_vel', '-append');
+
+bode(G_ol_vel)
+
+figure;
+step(G_cl_fwd_vel);
+hold on;
+step(G_cl_fdb_vel);
+hold off;
+legend('G_cl_fwd', 'G_cl_fdb');
+disp(stepinfo(G_cl_fwd_vel));
+disp(stepinfo(G_cl_fdb_vel));
+
+% Displaying the chainsaw effect.. 
+% It is slowly oscilating around the given velocity (when velocity is zero)
+
+%% Position controller
+% Transfer function from velocity control reference to position
+% Velcity controller reference to position
+load_system(model);
+open_system(model);
+% define points in model
+ios(1) = linio(strcat(model,'/vel_cont_ref'),1,'openinput');
+ios(2) = linio(strcat(model, '/pos'),1,'openoutput');
+% attach to model
+setlinio(model,ios);
+% Use the snapshot time(s) 0 seconds
+op = [0];
+% Linearize the model
+sys = linearize(model,ios,op);
+% get transfer function
+[num,den] = ss2tf(sys.A, sys.B, sys.C, sys.D);
+G_vel_pos = minreal(tf(num, den)) % transfer function from tilt to velocity
+
+%% Bodeplot
+h = figure(100)
+bode(G_vel_pos)
+
+grid on
+title('Transfer function from velocity reference to position')
+saveas(h, 'vel ref to position.png');
+
+%% Position controller parameters
+% will probably have to use a rate limiter or something similar as the
+% signal towards velocity should be limited
+
+Ni_pos = 5;
+alpha_pos = 0.2;
+phase_margin_pos = 60;
+
+% calculate the PI lead controller
+[wc_pos, Kp_pos, taui_pos, taud_pos, ok_pos] = findpid(G_vel_pos, phase_margin_pos, Ni_pos, alpha_pos);
+Cpi_pos = tf([taui_pos, 1], [taui_pos 0]);
+Cd_pos = tf([taud_pos, 1], [alpha_pos*taud_pos, 1]);
+G_ol_pos = Kp_pos*Cpi_pos*Cd_pos*G_vel_pos;
+G_cl_fwd_pos = G_ol_pos / (1 + G_ol_pos);
+G_cl_fdb_pos = (Kp_pos*Cpi_pos*G_vel_pos) / (1 + Kp_pos*Cpi_pos*G_vel_pos*Cd_pos);
+
+% get the individual numerator and denominators for the simulink model
+[num_Cd_pos, den_Cd_pos] = tfdata(Cd_pos, 'v');
+[num_Cpi_pos, den_Cpi_pos] = tfdata(Cpi_pos, 'v');
+
+% save to matlab
+save('control_variables.mat', 'num_Cd_pos', 'den_Cd_pos', 'num_Cpi_pos', 'den_Cpi_pos', '-append');
+save('control_variables.mat', 'Kp_pos', '-append');
+
+bode(G_ol_pos)
+
+% the feedback position is more stable so going with that configuration
+figure;
+step(G_cl_fwd_pos);
+hold on;
+step(G_cl_fdb_pos);
+hold off;
+legend('G_cl_fwd', 'G_cl_fdb');
+disp(stepinfo(G_cl_fwd_pos));
+disp(stepinfo(G_cl_fdb_pos));
