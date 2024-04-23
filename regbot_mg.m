@@ -196,19 +196,27 @@ saveas(h, 'tilt ref to wheel vel.png');
 
 %% Velcotiy controller parameters
 % PI-lead-lag controller
-%TOOD some work still needs to be done here, the graphs dont look too good
 
 Ni_vel = 5;
-alpha_vel = 0.2;
+alpha_vel = 0.05;
+% alpha_vel = 0.1;
 phase_margin_vel = 60;
 % since there was a chainsaw bode plot when just using PI-lead, the lag was
 % also added
 beta_vel = 10;
 
 % calculate the PI lead controller
-[wc_vel, Kp_vel, taui_vel, taud_vel, ok_vel] = findpidlag(G_tilt_vel, phase_margin_vel, Ni_vel, alpha_vel, beta_vel);
+% [wc_vel, Kp_vel, taui_vel, taud_vel, ok_vel] = findpidlag(G_tilt_vel, phase_margin_vel, Ni_vel, alpha_vel, beta_vel);
+
+% Two lead terms in order to bump up the phase
+[wc_vel, Kp_vel, taui_vel, taud_vel, ok_vel] = findpiddlag(G_tilt_vel, phase_margin_vel, Ni_vel, alpha_vel, beta_vel);
+% Lower Kp to get better stability margins
+Kp_vel = Kp_vel * 0.7;
+
 Cpi_vel = tf([taui_vel, 1], [taui_vel 1/beta_vel]);
+% Cpi_vel = tf([taui_vel, 1], [taui_vel 0]); % without Lag part
 Cd_vel = tf([taud_vel, 1], [alpha_vel*taud_vel, 1]);
+Cd_vel = Cd_vel * Cd_vel; % get the 2 Cd parts
 G_ol_vel = Kp_vel*Cpi_vel*Cd_vel*G_tilt_vel;
 G_cl_fwd_vel = G_ol_vel / (1 + G_ol_vel);
 G_cl_fdb_vel = (Kp_vel*Cpi_vel*G_tilt_vel) / (1 + Kp_vel*Cpi_vel*G_tilt_vel*Cd_vel);
@@ -231,9 +239,6 @@ hold off;
 legend('G_cl_fwd', 'G_cl_fdb');
 disp(stepinfo(G_cl_fwd_vel));
 disp(stepinfo(G_cl_fdb_vel));
-
-% Displaying the chainsaw effect.. 
-% It is slowly oscilating around the given velocity (when velocity is zero)
 
 %% Position controller
 % Transfer function from velocity control reference to position
