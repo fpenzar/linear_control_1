@@ -221,7 +221,7 @@ saveas(h, 'tilt ref to wheel vel.png');
 
 Kp_vel = 0.230;
 Cd_vel = tf([0, 1], [0.1, 1]);
-Cpi_vel = tf([100, 1], [100, 0]);
+Cpi_vel = tf([1.050, 1], [1.050, 0]);
 
 G_ol_vel = Kp_vel*Cpi_vel*Cd_vel*G_tilt_vel;
 G_cl_fwd_vel = G_ol_vel / (1 + G_ol_vel);
@@ -237,8 +237,6 @@ G_cl_fdb_vel = (Kp_vel*Cpi_vel*G_tilt_vel) / (1 + Kp_vel*Cpi_vel*G_tilt_vel*Cd_v
 save('control_variables.mat', 'num_Cd_vel', 'den_Cd_vel', 'num_Cpi_vel', 'den_Cpi_vel', '-append');
 save('control_variables.mat', 'Kp_vel', '-append');
 
-bode(G_tilt_vel)
-hold on;
 bode(G_ol_vel)
 
 figure;
